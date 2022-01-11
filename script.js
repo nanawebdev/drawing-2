@@ -4,17 +4,15 @@ const topControls = document.querySelector('.js-top-controls')
 const showingCurrentColor = document.querySelector('.js-current-color');
 document.body.style.height = window.innerHeight
 const r = Math.round;
+const LINE_WIDTH = 10
+const DEFAULT_COLOR = '#800080'
+let currentColor = DEFAULT_COLOR
 
 // WALL
 const wall = document.getElementById('js-wall')
 const ctx = wall.getContext('2d')
-const canvasWidth = window.innerWidth
-const canvasHeight = window.innerHeight - (bottomControls.offsetHeight + topControls.offsetHeight)
-const canvasTopOffset = topControls.offsetHeight
-wall.setAttribute('width', canvasWidth)
-wall.setAttribute('height', canvasHeight)
-wall.style.width = canvasWidth + 'px'
-wall.style.height = canvasHeight + 'px'
+let canvasTopOffset = topControls.offsetHeight
+onResize()
 setWallBackground('white') 
 
 
@@ -23,23 +21,17 @@ const palleteMenu = document.querySelector('.js-pallete-modal')
 const pallete = document.querySelector('.js-pallete-colors')
 const palleteResult = document.querySelector('.js-pallete-result')
 const palleteOpacityRange = document.querySelector('.js-pallete-range')
-const DEFAULT_COLOR = '#800080'
 
 // PEN 
 const penMenu = document.querySelector('.js-pen-modal')
 
-// Разобраться с линией
-const LINE_WIDTH = 10
-ctx.lineWidth = 20
-ctx.lineCap = 'round'
-
 setCurrentColor(DEFAULT_COLOR, 1)
 
 function setCurrentColor(color) {
-    let currentColor = color
-    ctx.strokeStyle = currentColor
-    ctx.fillStyle = currentColor
-    showingCurrentColor.style.backgroundColor = currentColor
+    currentColor = color
+    ctx.strokeStyle = color
+    ctx.fillStyle = color
+    showingCurrentColor.style.backgroundColor = color
 }
 
 function setWallBackground(color) { 
@@ -73,7 +65,7 @@ function drawing() {
     // для трюка 
     let isMouseDown = false
 
-    wall.addEventListener('mousedown', (e) => {
+    function onMouseDown(e) {
         isMouseDown = true
         // для того, чтобы при рисовании новой линии, не было связи со старой
         ctx.beginPath()
@@ -82,34 +74,42 @@ function drawing() {
 
         ctx.closePath()
         ctx.beginPath()
-    })
+    }
 
-    wall.addEventListener('mouseup', () => {
+    function onMouseUp() {
         isMouseDown = false
-    })
+    }
 
-    wall.addEventListener('mousemove', (e) => {
-
+    function onMouseMove(e) {
         if (isMouseDown) {
-            ctx.lineTo(e.clientX, e.clientY - canvasTopOffset)
+            const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX
+            const clientY = e instanceof MouseEvent ? e.clientY : e.touches[0].clientY
+
+            ctx.lineTo(clientX, clientY - canvasTopOffset)
             ctx.stroke()
 
             // для заполнения пробелов при рисовании линии
             // ctx.beginPath()
-            // ctx.arc(e.clientX, e.clientY - canvasTopOffset, LINE_WIDTH, 0, Math.PI * 2)
+            // ctx.arc(clientX, clientY - canvasTopOffset, LINE_WIDTH, 0, Math.PI * 2)
             // ctx.fill()
 
             ctx.beginPath()
-            ctx.moveTo(e.clientX, e.clientY - canvasTopOffset)
+            ctx.moveTo(clientX, clientY - canvasTopOffset)
         }
-    })
+    }
+
+    wall.addEventListener('mousedown', onMouseDown)
+    wall.addEventListener('touchstart', onMouseDown)
+    wall.addEventListener('mouseup', onMouseUp)
+    wall.addEventListener('touchend', onMouseDown)
+    wall.addEventListener('mousemove', onMouseMove)
+    wall.addEventListener('touchmove', onMouseMove)
 }
 
 if (palleteMenu) {
     palleteResult.style.backgroundColor = DEFAULT_COLOR
     palleteOpacityRange.style.background = `linear-gradient(90deg, rgba(255,255,255,1) 0%, ${DEFAULT_COLOR} 100%)`
 }
-
 
 function setColorPallete(e) {
     if (e.target.nodeName === 'LI') {
@@ -205,3 +205,18 @@ function blend(from, to, p = 0.5) {
 		r(((t[2] - f[2]) * p) + f[2])
 	).toString(16).slice(f[3] > -1 || t[3] > -1 ? 1 : 3);
 }
+
+function onResize() {
+    const canvasWidth = window.innerWidth > window.outerWidth ? window.outerWidth : window.innerWidth
+    const canvasHeight = (window.innerHeight > window.outerHeight ? window.outerHeight : window.innerHeight) - (bottomControls.offsetHeight + topControls.offsetHeight)
+    canvasTopOffset = topControls.offsetHeight
+    wall.setAttribute('width', canvasWidth)
+    wall.setAttribute('height', canvasHeight)
+    wall.style.width = canvasWidth + 'px'
+    wall.style.height = canvasHeight + 'px'
+    ctx.lineWidth = 2 * LINE_WIDTH
+    ctx.lineCap = 'round'
+    setCurrentColor(currentColor)
+}
+
+window.addEventListener('resize', onResize)
