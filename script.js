@@ -13,7 +13,7 @@ const wall = document.getElementById('js-wall')
 const ctx = wall.getContext('2d')
 let canvasTopOffset = topControls.offsetHeight
 onResize()
-setWallBackground('white') 
+setWallBackground('white')
 
 
 // PALLETE 
@@ -81,6 +81,7 @@ function drawing() {
     }
 
     function onMouseMove(e) {
+        e.preventDefault()
         if (isMouseDown) {
             const clientX = e instanceof MouseEvent ? e.clientX : e.touches[0].clientX
             const clientY = e instanceof MouseEvent ? e.clientY : e.touches[0].clientY
